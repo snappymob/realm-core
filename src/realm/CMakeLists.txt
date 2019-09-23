@@ -1,3 +1,12 @@
+BISON_TARGET(MyParser query/query_bison.yy ${CMAKE_CURRENT_BINARY_DIR}/query/query_bison.cpp
+             DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/query/query_bison.hpp)
+
+FLEX_TARGET(MyScanner query/query_flex.ll  ${CMAKE_CURRENT_BINARY_DIR}/query/query_flex.cpp
+             DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/query/query_flex.hpp
+             COMPILE_FLAGS "--noline")
+
+ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
+             
 set(REALM_SOURCES
     # slowest to compile first
     query.cpp
@@ -59,6 +68,9 @@ set(REALM_SOURCES
     utilities.cpp
     uuid.cpp
     version.cpp
+    query/driver.cpp
+    ${BISON_MyParser_OUTPUTS}
+    ${FLEX_MyScanner_OUTPUTS}
 ) # REALM_SOURCES
 
 set(UTIL_SOURCES

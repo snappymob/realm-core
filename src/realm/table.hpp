@@ -60,6 +60,7 @@ class SubQuery;
 class ColKeys;
 struct GlobalKey;
 class LinkChain;
+class Subexpr;
 
 struct Link {
 };
@@ -920,12 +921,19 @@ public:
         return *this;
     }
 
+    LinkChain& link(std::string col_name)
+    {
+        add(m_current_table->get_column_key(col_name));
+        return *this;
+    }
+
     LinkChain& backlink(const Table& origin, ColKey origin_col_key)
     {
         auto backlink_col_key = origin.get_opposite_column(origin_col_key);
         return link(backlink_col_key);
     }
 
+    Subexpr* column(std::string col_name);
 
     template <class T>
     inline Columns<T> column(ColKey col_key)
