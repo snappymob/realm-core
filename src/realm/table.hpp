@@ -904,8 +904,8 @@ enum class ExpressionComparisonType : unsigned char {
 // It has member functions corresponding to the ones defined on Table.
 class LinkChain {
 public:
-    LinkChain(ConstTableRef t, ExpressionComparisonType type = ExpressionComparisonType::Any)
-        : m_current_table(t.unchecked_ptr())
+    LinkChain(ConstTableRef t = {}, ExpressionComparisonType type = ExpressionComparisonType::Any)
+        : m_current_table(t ? t.unchecked_ptr() : nullptr)
         , m_base_table(t)
         , m_comparison_type(type)
     {
@@ -923,7 +923,14 @@ public:
 
     LinkChain& link(std::string col_name)
     {
-        add(m_current_table->get_column_key(col_name));
+        auto ck = m_current_table->get_column_key(col_name);
+        if (!ck) {
+            std::string err = m_current_table->get_name();
+            err += " has no property: ";
+            err += col_name;
+            throw std::runtime_error(err);
+        }
+        add(ck);
         return *this;
     }
 
