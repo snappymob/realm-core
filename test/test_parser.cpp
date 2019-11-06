@@ -378,20 +378,15 @@ TEST(Parser_grammar_analysis)
 Query verify_query(test_util::unit_test::TestContext& test_context, TableRef t, std::string query_string,
                    size_t num_results, parser::KeyPathMapping mapping = {})
 {
-    Query q = t->where();
     realm::query_builder::NoArguments args;
-
-    parser::ParserResult res = realm::parser::parse(query_string);
-    realm::query_builder::apply_predicate(q, res.predicate, args, mapping);
+    Query q = t->query(query_string, args, mapping);
 
     size_t q_count = q.count();
     CHECK_EQUAL(q_count, num_results);
     std::string description = q.get_description();
     // std::cerr << "original: " << query_string << "\tdescribed: " << description << "\n";
-    Query q2 = t->where();
+    Query q2 = t->query(description, args, mapping);
 
-    parser::ParserResult res2 = realm::parser::parse(description);
-    realm::query_builder::apply_predicate(q2, res2.predicate, args, mapping);
     size_t q2_count = q2.count();
     CHECK_EQUAL(q2_count, num_results);
     if (q_count != num_results || q2_count != num_results) {
@@ -417,9 +412,7 @@ TEST(Parser_empty_input)
     std::string empty_description = q.get_description();
     CHECK(!empty_description.empty());
     CHECK_EQUAL(0, empty_description.compare("TRUEPREDICATE"));
-    realm::parser::Predicate p = realm::parser::parse(empty_description).predicate;
-    query_builder::NoArguments args;
-    realm::query_builder::apply_predicate(q, p, args);
+    q = t->query(empty_description);
     CHECK_EQUAL(q.count(), 5);
 
     verify_query(test_context, t, "TRUEPREDICATE", 5);

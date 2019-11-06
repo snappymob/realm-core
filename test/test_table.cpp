@@ -5642,7 +5642,7 @@ TEST(Table_IndexOnMixed)
     CHECK_EQUAL(foos->find_first<Mixed>(col, UUID("3b241101-e2bb-4255-8caf-4136c566a962")), k10);
 }
 
-ONLY(Table_Jed)
+TEST(Table_SimpleParser)
 {
     Group g;
     auto dog = g.add_table("dog");

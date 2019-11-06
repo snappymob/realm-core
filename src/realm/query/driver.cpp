@@ -1,5 +1,6 @@
 #include "realm/query/driver.hpp"
 #include "realm/query/query_bison.hpp"
+#include <realm/parser/query_builder.hpp>
 
 using namespace realm;
 
@@ -22,6 +23,9 @@ int ParserDriver::parse(const std::string& str)
     parse.set_debug_level(trace_parsing);
     int res = parse();
     scan_end();
+    if (parse_error) {
+        throw std::runtime_error(error_string);
+    }
     return res;
 }
 
@@ -50,10 +54,80 @@ Subexpr* LinkChain::column(std::string col)
     }
     return nullptr;
 }
+namespace {
 
-Query Table::query(const std::string& query_string, const std::vector<Mixed>&) const
+class MixedArguments : public query_builder::Arguments {
+public:
+    MixedArguments(const std::vector<Mixed>& args)
+        : m_args(args)
+    {
+    }
+    bool bool_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<bool>();
+    }
+    long long long_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<int64_t>();
+    }
+    float float_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<float>();
+    }
+    double double_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<double>();
+    }
+    StringData string_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<StringData>();
+    }
+    BinaryData binary_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<BinaryData>();
+    }
+    Timestamp timestamp_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<Timestamp>();
+    }
+    ObjectId objectid_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<ObjectId>();
+    }
+    UUID uuid_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<UUID>();
+    }
+    Decimal128 decimal128_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<Decimal128>();
+    }
+    ObjKey object_index_for_argument(size_t n) final
+    {
+        return m_args.at(n).get<ObjKey>();
+    }
+    bool is_argument_null(size_t n) final
+    {
+        return m_args.at(n).is_null();
+    }
+
+private:
+    const std::vector<Mixed>& m_args;
+};
+
+} // namespace
+
+Query Table::query(const std::string& query_string, const std::vector<Mixed>& arguments) const
+{
+    MixedArguments args(arguments);
+    return query(query_string, args, {});
+}
+
+Query Table::query(const std::string& query_string, query_builder::Arguments&,
+                   const parser::KeyPathMapping&) const
 {
     ParserDriver driver(m_own_ref);
     driver.parse(query_string);
     return std::move(driver.result);
 }
+

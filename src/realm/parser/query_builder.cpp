@@ -893,6 +893,7 @@ void apply_ordering(DescriptorOrdering& ordering, ConstTableRef target, const pa
 
 } // namespace query_builder
 
+/*
 namespace {
 
 class MixedArguments : public Arguments {
@@ -957,13 +958,11 @@ private:
 } // namespace
 
 // Functions placed here in order not to require the Parser Library if this function is not used.
-/*
 Query Table::query(const std::string& query_string, const std::vector<Mixed>& arguments) const
 {
     MixedArguments args(arguments);
     return query(query_string, args, {});
 }
-*/
 
 Query Table::query(const std::string& query_string, query_builder::Arguments& arguments,
                    const parser::KeyPathMapping& mapping) const
@@ -975,5 +974,6 @@ Query Table::query(const std::string& query_string, query_builder::Arguments& ar
 
     return q;
 }
+*/
 
 } // namespace realm
