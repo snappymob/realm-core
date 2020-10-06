@@ -337,7 +337,7 @@ struct Payload {
                 case Type::Erased:
                     return true;
                 case Type::Dictionary:
-                    return lhs.data.key == rhs.data.key;
+                    return true;
                 case Type::ObjectValue:
                     return true;
                 case Type::GlobalKey:
