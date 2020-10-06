@@ -299,10 +299,6 @@ public:
     {
         return true;
     }
-    bool dictionary_clear()
-    {
-        return true;
-    }
 };
 
 
