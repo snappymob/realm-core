@@ -122,11 +122,11 @@ namespace realm {
 // Number of matches to find in best condition loop before breaking out to probe other conditions. Too low value gives
 // too many constant time overheads everywhere in the query engine. Too high value makes it adapt less rapidly to
 // changes in match frequencies.
-const size_t findlocals = 64;
+const size_t findlocals = 16;
 
 // Average match distance in linear searches where further increase in distance no longer increases query speed
 // (because time spent on handling each match becomes insignificant compared to time spent on the search).
-const size_t bestdist = 512;
+const size_t bestdist = 128;
 
 // Minimum number of matches required in a certain condition before it can be used to compute statistics. Too high
 // value can spent too much time in a bad node (with high match frequency). Too low value gives inaccurate statistics.
