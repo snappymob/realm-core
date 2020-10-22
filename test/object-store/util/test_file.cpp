@@ -61,15 +61,7 @@ TestFile::TestFile()
 {
     static std::string tmpdir = [] {
         disable_sync_to_disk();
-
-        const char* dir = getenv("TMPDIR");
-        if (dir && *dir)
-            return dir;
-#if REALM_ANDROID
-        return "/data/local/tmp";
-#else
-        return "/tmp";
-#endif
+        return tmp_dir();
     }();
     path = tmpdir + "/realm.XXXXXX";
     int fd = mkstemp(&path[0]);

@@ -16,6 +16,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+#include <filesystem>
+
 #include <realm/object-store/impl/realm_coordinator.hpp>
 #include "test_utils.hpp"
 
@@ -55,7 +57,8 @@ std::string tmp_dir()
 #if REALM_ANDROID
     return "/data/local/tmp/";
 #else
-    return "/tmp/";
+    const auto temp_dir = std::filesystem::temp_directory_path();
+    return temp_dir.string();
 #endif
 }
 
