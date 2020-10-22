@@ -627,19 +627,15 @@ void Group::remap(size_t new_file_size)
 
 void Group::remap_and_update_refs(ref_type new_top_ref, size_t new_file_size, bool writable)
 {
-    size_t old_baseline = m_alloc.get_baseline();
-
     m_alloc.update_reader_view(new_file_size); // Throws
     update_allocator_wrappers(writable);
 
     // force update of all ref->ptr translations if the mapping has changed
     auto mapping_version = m_alloc.get_mapping_version();
     if (mapping_version != m_last_seen_mapping_version) {
-        // force re-translation of all refs
-        old_baseline = 0;
         m_last_seen_mapping_version = mapping_version;
     }
-    update_refs(new_top_ref, old_baseline);
+    update_refs(new_top_ref);
 }
 
 void Group::validate_top_array(const Array& arr, const SlabAlloc& alloc)
@@ -1352,8 +1348,6 @@ void Group::commit()
     // Mark all managed space (beyond the attached file) as free.
     reset_free_space_tracking(); // Throws
 
-    size_t old_baseline = m_alloc.get_baseline();
-
     // Update view of the file
     size_t new_file_size = out.get_file_size();
     m_alloc.update_reader_view(new_file_size); // Throws
@@ -1365,44 +1359,28 @@ void Group::commit()
     auto mapping_version = m_alloc.get_mapping_version();
     if (mapping_version != m_last_seen_mapping_version) {
         // force re-translation of all refs
-        old_baseline = 0;
         m_last_seen_mapping_version = mapping_version;
     }
-    update_refs(top_ref, old_baseline);
+    update_refs(top_ref);
 }
 
 
-void Group::update_refs(ref_type top_ref, size_t old_baseline) noexcept
+void Group::update_refs(ref_type top_ref) noexcept
 {
-    old_baseline = 0; // force update of all accessors
     // After Group::commit() we will always have free space tracking
     // info.
     REALM_ASSERT_3(m_top.size(), >=, 5);
 
-    // Array nodes that are part of the previous version of the
-    // database will not be overwritten by Group::commit(). This is
-    // necessary for robustness in the face of abrupt termination of
-    // the process. It also means that we can be sure that an array
-    // remains unchanged across a commit if the new ref is equal to
-    // the old ref and the ref is below the previous baseline.
-
-    if (top_ref < old_baseline && m_top.get_ref() == top_ref)
-        return;
-
     m_top.init_from_ref(top_ref);
 
     // Now we can update it's child arrays
-    m_table_names.update_from_parent(old_baseline);
-
-    // If m_tables has not been modfied we don't
-    // need to update attached table accessors
-    if (!m_tables.update_from_parent(old_baseline))
-        return;
+    m_table_names.update_from_parent();
+    m_tables.update_from_parent();
 
     // Update all attached table accessors.
     for (auto& table_accessor : m_table_accessors) {
         if (table_accessor) {
-            table_accessor->update_from_parent(old_baseline);
+            table_accessor->update_from_parent();
         }
     }
 }
@@ -1672,11 +1650,9 @@ void Group::refresh_dirty_accessors()
 }
 
 
-void Group::advance_transact(ref_type new_top_ref, size_t new_file_size, _impl::NoCopyInputStream& in, bool writable)
+void Group::advance_transact(ref_type new_top_ref, _impl::NoCopyInputStream& in, bool writable)
 {
     REALM_ASSERT(is_attached());
-    // REALM_ASSERT(false); // FIXME: accessor updates need to be handled differently
-
     // Exception safety: If this function throws, the group accessor and all of
     // its subordinate accessors are left in a state that may not be fully
     // consistent. Only minimal consistency is guaranteed (see
@@ -1687,7 +1663,6 @@ void Group::advance_transact(ref_type new_top_ref, size_t new_file_size, _impl::
     // such actions will also lead to the detachment of all subordinate
     // accessors. Until then it is an error, and unsafe if the application
     // attempts to access the group one of its subordinate accessors.
-    //
     //
     // The purpose of this function is to refresh all attached accessors after
     // the underlying node structure has undergone arbitrary change, such as
@@ -1709,33 +1684,6 @@ void Group::advance_transact(ref_type new_top_ref, size_t new_file_size, _impl::
     // into a state where they correctly reflect the underlying structure (or
     // detach them if the underlying object has been removed.)
     //
-    // The consequences of the changes in the transaction logs can be divided
-    // into two types; those that need to be applied to the accessors
-    // immediately (Table::adj_insert_column()), and those that can be "lumped
-    // together" and deduced during a final accessor refresh operation
-    // (Table::refresh_accessor_tree()).
-    //
-    // Most transaction log instructions have consequences of both types. For
-    // example, when an "insert column" instruction is seen, we must immediately
-    // shift the positions of all existing columns accessors after the point of
-    // insertion. For practical reasons, and for efficiency, we will just insert
-    // a null pointer into `Table::m_cols` at this time, and then postpone the
-    // creation of the column accessor to the final per-table accessor refresh
-    // operation.
-    //
-    // The final per-table refresh operation visits each table accessor
-    // recursively starting from the roots (group-level tables). It relies on
-    // the the per-table accessor dirty flags (Table::m_dirty) to prune the
-    // traversal to the set of accessors that were touched by the changes in the
-    // transaction logs.
-    // Update memory mapping if database file has grown
-
-    // FIXME: When called from Transaction::internal_advance_read(), a previous
-    // call has already updated mappings and wrappers to the new state. By aligning
-    // other callers, we could remove the 2 calls below:
-    m_alloc.update_reader_view(new_file_size); // Throws
-    update_allocator_wrappers(writable);
-
     // This is no longer needed in Core, but we need to compute "schema_changed",
     // for the benefit of ObjectStore.
     bool schema_changed = false;
