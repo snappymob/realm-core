@@ -5388,12 +5388,16 @@ TEST(Query_SwitchNode)
     auto q1 = table->where().equal(col_foo, 1.0f);
     auto q2 = table->where().equal(col_bar, 1.0f);
     Query q = q1.and_query(q2);
-    auto t1 = steady_clock::now();
+    // auto t1 = steady_clock::now();
     auto cnt = q.count();
-    auto t2 = steady_clock::now();
+    // auto t2 = steady_clock::now();
     CHECK_EQUAL(cnt, 100);
-    auto dur = duration_cast<microseconds>(t2 - t1).count();
-    std::cout << "cnt: " << cnt << " duration: " << dur << " us" << std::endl;
+    // It is not really possible to see from the outside, if the query engine
+    // alternates between the two nodes. The duration check was to see if
+    // the change helped.
+
+    // auto dur = duration_cast<microseconds>(t2 - t1).count();
+    // std::cout << "cnt: " << cnt << " duration: " << dur << " us" << std::endl;
 }
 
 #endif // TEST_QUERY
