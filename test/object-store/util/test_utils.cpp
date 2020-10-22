@@ -16,8 +16,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-#include <filesystem>
-
 #include <realm/object-store/impl/realm_coordinator.hpp>
 #include "test_utils.hpp"
 
