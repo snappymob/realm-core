@@ -56,9 +56,19 @@ std::string tmp_dir()
         return dir;
 #if REALM_ANDROID
     return "/data/local/tmp/";
+#elif _WIN32
+    std::string buf;
+    size_t buf_size_needed = static_cast<size_t>(::GetTempPathA(0, nullptr));
+    buf.resize(buf_size_needed + 1);
+
+    buf_size_needed = static_cast<size_t>(::GetTempPathA(buf.size(), buf.data()));
+    if (buf_size_needed == 0) {
+        throw std::system_error(GetLastError(), std::system_category());
+    }
+    buf.resize(buf_size_needed);
+    return buf;
 #else
-    const auto temp_dir = std::filesystem::temp_directory_path();
-    return temp_dir.string();
+    return "/tmp";
 #endif
 }
 
