@@ -122,7 +122,7 @@ namespace realm {
 // Number of matches to find in best condition loop before breaking out to probe other conditions. Too low value gives
 // too many constant time overheads everywhere in the query engine. Too high value makes it adapt less rapidly to
 // changes in match frequencies.
-const size_t findlocals = 16;
+const size_t findlocals = 64;
 
 // Average match distance in linear searches where further increase in distance no longer increases query speed
 // (because time spent on handling each match becomes insignificant compared to time spent on the search).
@@ -484,12 +484,11 @@ protected:
                 return not_found;
         }
 
+        st->m_local_match_count += m_local_matches;
         if (m_local_matches == m_local_limit) {
-            m_dD = (m_last_local_match + 1 - start) / (m_local_matches + 1.0);
             return m_last_local_match + 1;
         }
         else {
-            m_dD = (end - start) / (m_local_matches + 1.0);
             return end;
         }
     }

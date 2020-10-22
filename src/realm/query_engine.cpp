@@ -170,7 +170,7 @@ size_t ParentNode::aggregate_local(QueryStateBase* st, size_t start, size_t end,
     size_t r = start - 1;
     for (;;) {
         if (local_matches == local_limit) {
-            m_dD = double(r - start) / (local_matches + 1.1);
+            st->m_local_match_count += local_matches;
             return r + 1;
         }
 
@@ -178,7 +178,7 @@ size_t ParentNode::aggregate_local(QueryStateBase* st, size_t start, size_t end,
         auto pos = r + 1;
         r = find_first_local(pos, end);
         if (r == not_found) {
-            m_dD = double(pos - start) / (local_matches + 1.1);
+            st->m_local_match_count += local_matches;
             return end;
         }
 
