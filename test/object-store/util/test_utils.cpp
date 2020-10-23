@@ -66,7 +66,7 @@ std::string tmp_dir()
     buf.resize(buf_size_needed);
     return buf;
 #else
-    return "/tmp";
+    return "/tmp/";
 #endif
 }
 
