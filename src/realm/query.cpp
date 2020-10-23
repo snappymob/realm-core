@@ -996,15 +996,8 @@ void Query::aggregate_internal(ParentNode* pn, QueryStateBase* st, size_t start,
                 start =
                     pn->m_children[c]->aggregate_local(st, start, std::min(td, end), probe_matches, source_column);
 
-                // Calculate new m_dD
-                if (st->m_local_match_count > 0) {
-                    pn->m_children[c]->m_dD = (start - prev_pos) / st->m_local_match_count;
-                }
-                else {
-                    // We have not found any in (start - prev_pos) elements, so m_dD should at least be that
-                    if (pn->m_children[c]->m_dD < (start - prev_pos))
-                        pn->m_children[c]->m_dD = (start - prev_pos);
-                }
+                // Calculate new m_dD - and handle the case where st->m_local_match_count is zero
+                pn->m_children[c]->m_dD = (start - prev_pos) / (st->m_local_match_count + 1);
                 re_evaluate = true;
             }
             if (re_evaluate) {
