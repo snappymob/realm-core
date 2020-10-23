@@ -973,14 +973,15 @@ void Query::aggregate_internal(ParentNode* pn, QueryStateBase* st, size_t start,
 {
     auto current_node = pn->m_children[st->m_best_node];
     while (start < end) {
-        if (st->m_local_match_count >= findlocals && pn->m_children.size() > 1) {
+        if (st->m_local_match_count >= findlocals) {
             // Time to evaluate other nodes
             // Update m_dD
             current_node->m_dD = st->m_number_checked / st->m_local_match_count;
             double current_cost = current_node->cost();
+            bool re_evaluate = false;
 
             // Make remaining conditions compute their m_dD (statistics)
-            for (size_t c = 0; c < pn->m_children.size(); c++) {
+            for (size_t c = 0; c < pn->m_children.size() && start < end; c++) {
                 if (c == st->m_best_node)
                     continue;
 
@@ -1004,11 +1005,16 @@ void Query::aggregate_internal(ParentNode* pn, QueryStateBase* st, size_t start,
                     if (pn->m_children[c]->m_dD < (start - prev_pos))
                         pn->m_children[c]->m_dD = (start - prev_pos);
                 }
+                re_evaluate = true;
             }
-            st->m_local_match_count = 0;
-            st->m_number_checked = 0;
-            st->m_best_node = find_best_node(pn);
-            current_node = pn->m_children[st->m_best_node];
+            if (re_evaluate) {
+                st->m_local_match_count = 0;
+                st->m_number_checked = 0;
+                st->m_best_node = find_best_node(pn);
+                current_node = pn->m_children[st->m_best_node];
+                if (start >= end)
+                    return;
+            }
         }
         size_t prev_pos = start;
         // Executes start...end range of a query and will stay inside the condition loop of the node it was called
