@@ -59,7 +59,7 @@ std::string tmp_dir()
     size_t buf_size_needed = static_cast<size_t>(::GetTempPathA(0, nullptr));
     buf.resize(buf_size_needed + 1);
 
-    buf_size_needed = static_cast<size_t>(::GetTempPathA(buf.size(), buf.data()));
+    buf_size_needed = static_cast<size_t>(::GetTempPathA(static_cast<DWORD>(buf.size()), buf.data()));
     if (buf_size_needed == 0) {
         throw std::system_error(GetLastError(), std::system_category());
     }
