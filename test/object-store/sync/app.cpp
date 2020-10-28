@@ -35,7 +35,9 @@
 #include <external/json/json.hpp>
 #include <realm/util/base64.hpp>
 #include <realm/util/uri.hpp>
+
 #include <thread>
+#include <iostream>
 
 using namespace realm;
 using namespace realm::app;

@@ -17,7 +17,7 @@ public:
     explicit TimestampStderrLogger(Config = {});
 
 protected:
-    void do_log(Logger::Level, std::string message) override;
+    void do_log(Logger::Level, std::string const& message) override;
 
 private:
     TimestampFormatter m_formatter;

@@ -15,7 +15,7 @@
 -----------
 
 ### Internals
-* None.
+* Refactor the string formatting logic for logging, reducing the compiled size of the library.
 
 ----------------------------------------------
 

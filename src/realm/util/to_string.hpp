@@ -20,9 +20,12 @@
 #define REALM_UTIL_TO_STRING_HPP
 
 #include <iosfwd>
+#include <ostream>
 #include <string>
+#include <string_view>
 
 namespace realm {
+class StringData;
 namespace util {
 
 class Printable {
@@ -33,6 +36,11 @@ public:
     {
     }
     Printable(unsigned char value)
+        : m_type(Type::Uint)
+        , m_uint(value)
+    {
+    }
+    Printable(unsigned short value)
         : m_type(Type::Uint)
         , m_uint(value)
     {
@@ -53,6 +61,16 @@ public:
     {
     }
     Printable(char value)
+        : m_type(Type::Int)
+        , m_int(value)
+    {
+    }
+    Printable(signed char value)
+        : m_type(Type::Int)
+        , m_int(value)
+    {
+    }
+    Printable(short value)
         : m_type(Type::Int)
         , m_int(value)
     {
@@ -84,7 +102,17 @@ public:
     }
     Printable(std::string const& value)
         : m_type(Type::String)
-        , m_string(value.c_str())
+        , m_string(value)
+    {
+    }
+    Printable(StringData value);
+
+    template <typename T>
+    Printable(T const& value)
+        : m_type(Type::Callback)
+        , m_callback({static_cast<const void*>(&value), [](std::ostream& os, const void* ptr) {
+                          os << *static_cast<const T*>(ptr);
+                      }})
     {
     }
 
@@ -101,13 +129,20 @@ private:
         Uint,
         Double,
         String,
+        Callback,
     } m_type;
+
+    struct Callback {
+        const void* data;
+        void (*fn)(std::ostream&, const void*);
+    };
 
     union {
         uintmax_t m_uint;
         intmax_t m_int;
         double m_double;
-        const char* m_string;
+        std::string_view m_string;
+        Callback m_callback;
     };
 };
 
@@ -118,7 +153,7 @@ std::string to_string(const T& v)
     return Printable(v).str();
 }
 
-
+void format(std::ostream&, const char* fmt, std::initializer_list<Printable>);
 std::string format(const char* fmt, std::initializer_list<Printable>);
 
 // format string format:
@@ -127,12 +162,17 @@ std::string format(const char* fmt, std::initializer_list<Printable>);
 //
 // format("Hello %1, meet %2. %3%% complete.", "Alice", "Bob", 97)
 //  -> "Hello Alice, meet Bob. 97% complete."
-template<typename... Args>
+template <typename... Args>
 std::string format(const char* fmt, Args&&... args)
 {
     return format(fmt, {Printable(args)...});
 }
 
+template <typename... Args>
+void format(std::ostream& os, const char* fmt, Args&&... args)
+{
+    format(os, fmt, {Printable(args)...});
+}
 
 } // namespace util
 } // namespace realm
